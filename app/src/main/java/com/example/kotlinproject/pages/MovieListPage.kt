@@ -1,6 +1,7 @@
 package com.example.kotlinproject.pages
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -139,7 +140,10 @@ fun MovieListPage(onMovieClick: (Movie) -> Unit) {
                             CircularProgressIndicator(modifier = Modifier.padding(16.dp))
                         } else {
                             LaunchedEffect(currentPage) {
-                                loadMoreMovies(currentPage, movies.size, "${selectedSortOption.value}.${selectedOrderOption.value}") { newMovies ->
+                                loadMoreMovies(
+                                    currentPage,
+                                    "${selectedSortOption.value}.${selectedOrderOption.value}"
+                                ) { newMovies ->
                                     if (newMovies.isNotEmpty()) {
                                         movies = movies + newMovies
                                         currentPage++
@@ -259,11 +263,17 @@ private fun fetchMovies(page: Int, sortOption: String, callback: (List<Movie>?, 
             .addHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyMTU3ZDhkZWMwMDdkMmE2NTk0ODMxODk1NTI4ZTE0MCIsIm5iZiI6MTczMDA0MjU1My42NDk0MjEsInN1YiI6IjY3MWNjMjhlMjdiZDU3ZDkxZjYyYzM2YSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.eINlcwN5wuiMORzser26fsUOvfE3RpL-8bMnxhexSxs")
             .build()
 
+        Log.d("MovieList", "Fetching movies from URL: $url")
+
         try {
             val response: Response = client.newCall(request).execute()
 
+            Log.d("MovieList", "Response Code: ${response.code}")
+
             if (response.isSuccessful) {
                 val responseData = response.body?.string() ?: return@Thread callback(null, "Пустой ответ")
+                Log.d("MovieList", "Response Data: $responseData")
+
                 val jsonObject = Gson().fromJson(responseData, JsonObject::class.java)
                 val jsonArray: JsonArray = jsonObject.getAsJsonArray("results")
 
@@ -323,15 +333,18 @@ private fun fetchMovies(page: Int, sortOption: String, callback: (List<Movie>?, 
 
                 callback(movieList, null)
             } else {
+                Log.e("MovieList", "Error: ${response.code} - ${response.message}")
                 callback(null, "Ошибка: ${response.code}")
             }
         } catch (e: Exception) {
+            Log.e("MovieList", "Error: ${e.message}")
             callback(null, "Ошибка: ${e.message}")
         }
     }.start()
 }
 
-private fun loadMoreMovies(currentPage: Int, currentMoviesCount: Int, sortOption: String, callback: (List<Movie>) -> Unit) {
+
+private fun loadMoreMovies(currentPage: Int, sortOption: String, callback: (List<Movie>) -> Unit) {
     fetchMovies(currentPage + 1, sortOption) { newMovies, _ ->
         if (newMovies != null && newMovies.isNotEmpty()) {
             callback(newMovies)

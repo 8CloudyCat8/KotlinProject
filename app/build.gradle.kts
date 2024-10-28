@@ -59,9 +59,8 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
-    // Зависимости для ViewModel
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1") // Для использования ViewModel с Compose
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1") // Для работы с жизненным циклом
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -75,6 +74,6 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
     implementation("io.coil-kt:coil-compose:2.0.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0") // Обновите на последнюю версию
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0") // Обновите на последнюю версию
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.0")
 }
