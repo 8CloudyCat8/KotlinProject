@@ -142,7 +142,7 @@ fun MovieListPage(onMovieClick: (Movie) -> Unit) {
                                 loadMoreMovies(currentPage, movies.size, "${selectedSortOption.value}.${selectedOrderOption.value}") { newMovies ->
                                     if (newMovies.isNotEmpty()) {
                                         movies = movies + newMovies
-                                        currentPage++
+                                        currentPage++ // Увеличиваем номер страницы
                                     }
                                 }
                             }
@@ -203,6 +203,7 @@ fun MovieListItem(movie: Movie, onClick: () -> Unit) {
                 )
             }
 
+            // Затемнение
             Box(
                 modifier = Modifier
                     .matchParentSize()
@@ -234,6 +235,7 @@ fun MovieListItem(movie: Movie, onClick: () -> Unit) {
 }
 
 private fun fetchMovies(page: Int, sortOption: String, callback: (List<Movie>?, String?) -> Unit) {
+    // Создаем TrustManager, который доверяет всем сертификатам
     val trustAllCerts = object : X509TrustManager {
         @SuppressLint("TrustAllX509TrustManager")
         override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
@@ -256,7 +258,7 @@ private fun fetchMovies(page: Int, sortOption: String, callback: (List<Movie>?, 
         val request = Request.Builder()
             .url(url)
             .addHeader("accept", "application/json")
-            .addHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyMTU3ZDhkZWMwMDdkMmE2NTk0ODMxODk1NTI4ZTE0MCIsIm5iZiI6MTczMDA0MjU1My42NDk0MjEsInN1YiI6IjY3MWNjMjhlMjdiZDU3ZDkxZjYyYzM2YSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.eINlcwN5wuiMORzser26fsUOvfE3RpL-8bMnxhexSxs")
+            .addHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyMTU3ZDhkZWMwMDdkMmE2NTk0ODMxODk1NTI4ZTE0MCIsIm5iZiI6MTczMDA0MjU1My42NDk0MjEsInN1YiI6IjY3MWNjMjhlMjdiZDU3ZDkxZjYyYzM2YSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.eINlcwN5wuiMORzser26fsUOvfE3RpL-8bMnxhexSxs") // Замените на ваш токен
             .build()
 
         try {
@@ -286,7 +288,7 @@ private fun fetchMovies(page: Int, sortOption: String, callback: (List<Movie>?, 
                     val releaseDate = if (movieObj.has("release_date") && movieObj.get("release_date") != JsonNull.INSTANCE) {
                         movieObj.get("release_date").asString
                     } else {
-                        ""
+                        "" // или другое значение по умолчанию
                     }
 
                     val year = if (releaseDate.length >= 4) {

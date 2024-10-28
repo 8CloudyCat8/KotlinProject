@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import com.example.kotlinproject.ui.theme.KotlinProjectTheme
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
