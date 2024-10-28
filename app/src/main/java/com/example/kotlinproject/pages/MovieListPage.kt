@@ -1,155 +1,355 @@
 package com.example.kotlinproject.pages
 
+import android.annotation.SuppressLint
+import android.util.Log
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import coil.compose.rememberImagePainter
 import com.example.kotlinproject.models.Movie
+import com.google.gson.Gson
+import com.google.gson.JsonArray
+import com.google.gson.JsonNull
+import com.google.gson.JsonObject
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import java.security.cert.X509Certificate
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
+
+data class SortOption(val value: String, val label: String)
 
 @Composable
 fun MovieListPage(onMovieClick: (Movie) -> Unit) {
-    val movies = listOf(
-        Movie(
-            id = 1,
-            title = "Побег из Шоушенка",
-            year = 1994,
-            director = "Фрэнк Дарабонт",
-            actors = listOf("Тим Роббинс", "Морган Фриман", "Боб Гантон"),
-            description = """
-                В этой экранизации повести Стивена Кинга рассказывается о жизни Энди Дюфрейна, осужденного за убийство своей жены и её любовника. Проведя много лет в тюрьме Шоушенк, он подружился с сокамерником Редом, который помогает ему в адаптации. С помощью своих умений он находит способы выживания и сохраняет надежду на свободу.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 2,
-            title = "Крестный отец",
-            year = 1972,
-            director = "Фрэнсис Форд Коппола",
-            actors = listOf("Марлон Брандо", "Аль Пачино", "Джеймс Каан"),
-            description = """
-                Это история семьи Корлеоне, итало-американской мафиозной династии, управляющей криминальным миром Нью-Йорка. Когда главу семьи, дона Вито Корлеоне, пытаются убить, его сын Майкл, который изначально не хотел участвовать в делах семьи, вынужден взять на себя руководство.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 3,
-            title = "Начало",
-            year = 2010,
-            director = "Кристофер Нолан",
-            actors = listOf("Леонардо ДиКаприо", "Джозеф Гордон-Левитт", "Эллиот Пейдж"),
-            description = """
-                Специалист по воровству идей, Доменик Кобб, получает задание внедрить идею в подсознание человека. Вместе со своей командой он погружается в мир снов, где границы реальности стираются. Фильм полон захватывающих поворотов и визуально впечатляющих сцен.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 4,
-            title = "Темный рыцарь",
-            year = 2008,
-            director = "Кристофер Нолан",
-            actors = listOf("Кристиан Бейл", "Хит Леджер", "Аарон Экхарт"),
-            description = """
-                В Готэме появляется новый злодей — Джокер, который угрожает разрушить город. Бэтмен, комиссар Гордон и прокурор Харви Дент объединяются, чтобы остановить его, но Джокер всегда на шаг впереди, создавая хаос.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 5,
-            title = "Бойцовский клуб",
-            year = 1999,
-            director = "Дэвид Финчер",
-            actors = listOf("Эдвард Нортон", "Брэд Питт", "Хелена Бонэм Картер"),
-            description = """
-                Обычный офисный работник, страдающий от бессонницы, находит выход в создании подпольного бойцовского клуба. Под влиянием харизматичного Тайлер Дёрдена он начинает переосмыслять свою жизнь и общество, в котором живет.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 6,
-            title = "Форрест Гамп",
-            year = 1994,
-            director = "Роберт Земекис",
-            actors = listOf("Том Хэнкс", " robin Wright", "Гэри Синиз"),
-            description = """
-                Форрест Гамп — простой человек с низким IQ, но с большим сердцем. Его жизнь полна удивительных приключений: он становится свидетелем и участником значимых исторических событий, показывая, как простота и доброта могут изменить мир.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 7,
-            title = "Криминальное чтиво",
-            year = 1994,
-            director = "Квентин Тарантино",
-            actors = listOf("Джон Траволта", "Ума Турман", "Сэмюэл Л. Джексон"),
-            description = """
-                Этот фильм состоит из переплетенных историй, в которых главные герои сталкиваются с последствиями своих решений. Фильм выделяется своим уникальным стилем, диалогами и напряженными сценами, ставшими культовыми.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 8,
-            title = "Матрица",
-            year = 1999,
-            director = "Лана и Лилли Вачовски",
-            actors = listOf("Киану Ривз", "Лоренс Фишборн", "Кэрри-Энн Мосс"),
-            description = """
-                Нео, компьютерный хакер, обнаруживает, что мир, в котором он живет, — это всего лишь симуляция. Он присоединяется к группе повстанцев, чтобы сражаться с машинами, контролирующими человечество, и узнать правду о своем существовании.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 9,
-            title = "Властелин колец: Братство кольца",
-            year = 2001,
-            director = "Питер Джексон",
-            actors = listOf("Элайджа Вуд", "Иэн Маккеллен", "Лив Тайлер"),
-            description = """
-                Это первая часть эпической трилогии по книге Дж. Р. Р. Толкина о борьбе за Средиземье. Хоббит Фродо Бэггинс и его друзья отправляются в опасное путешествие, чтобы уничтожить могущественное кольцо, которое может привести к разрушению всего мира.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 10,
-            title = "Гладиатор",
-            year = 2000,
-            director = "Ридли Скотт",
-            actors = listOf("Рассел Кроу", "Хоакин Феникс", "Ричард Харрис"),
-            description = """
-                Генерал Максимус, преданный Римской империи, становится гладиатором после предательства. Он должен сразиться за свою жизнь и отомстить тому, кто убил его семью и украл его честь.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 11,
-            title = "Властелин колец: Две крепости",
-            year = 2002,
-            director = "Питер Джексон",
-            actors = listOf("Элайджа Вуд", "Иэн Маккеллен", "Лив Тайлер"),
-            description = """
-                Братство распалось, но Кольцо Всевластья должно быть уничтожено. Фродо и Сэм вынуждены доверить свои жизни Голлуму, который взялся провести их к вратам Мордора. Громадная Армия Сарумана приближается: члены братства и их союзники готовы принять бой. Битва за Средиземье продолжается.
-            """.trimIndent()
-        ),
+    var movies by remember { mutableStateOf<List<Movie>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var currentPage by remember { mutableStateOf(1) }
+
+    var selectedSortOption by remember { mutableStateOf(SortOption("popularity", "Популярность")) }
+    var selectedOrderOption by remember { mutableStateOf(SortOption("desc", "По убыванию")) }
+
+    val sortOptions = listOf(
+        SortOption("popularity", "Популярность"),
+        SortOption("original_title", "Оригинальное название"),
+        SortOption("revenue", "Выручка"),
+        SortOption("title", "Название"),
+        SortOption("primary_release_date", "Дата релиза"),
+        SortOption("vote_average", "Средняя оценка"),
+        SortOption("vote_count", "Количество голосов")
     )
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 100.dp, top = 20.dp)
-        ) {
-            items(movies) { movie ->
-                MovieListItem(movie = movie, onClick = { onMovieClick(movie) })
+    val orderOptions = listOf(
+        SortOption("desc", "По убыванию"),
+        SortOption("asc", "По возрастанию")
+    )
+
+    LaunchedEffect(selectedSortOption.value, selectedOrderOption.value) {
+        isLoading = true
+        val sortOption = "${selectedSortOption.value}.${selectedOrderOption.value}"
+        fetchMovies(currentPage, sortOption) { result, error ->
+            if (result != null) {
+                movies = result
             }
+            isLoading = false
+            errorMessage = error
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) {
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Сортировать по:", modifier = Modifier.padding(end = 8.dp))
+            var expandedSort by remember { mutableStateOf(false) }
+            Box {
+                Text(selectedSortOption.label, Modifier.clickable { expandedSort = !expandedSort })
+                DropdownMenu(expanded = expandedSort, onDismissRequest = { expandedSort = false }) {
+                    sortOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option.label) },
+                            onClick = {
+                                selectedSortOption = option
+                                expandedSort = false
+                                currentPage = 1
+                                movies = emptyList()
+                            },
+                            modifier = Modifier,
+                            interactionSource = remember { MutableInteractionSource() }
+                        )
+                    }
+                }
+            }
+        }
+
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("Порядок:", modifier = Modifier.padding(end = 8.dp))
+            var expandedOrder by remember { mutableStateOf(false) }
+            Box {
+                Text(selectedOrderOption.label, Modifier.clickable { expandedOrder = !expandedOrder })
+                DropdownMenu(expanded = expandedOrder, onDismissRequest = { expandedOrder = false }) {
+                    orderOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option.label) },
+                            onClick = {
+                                selectedOrderOption = option
+                                expandedOrder = false
+                                currentPage = 1
+                                movies = emptyList()
+                            },
+                            modifier = Modifier,
+                            interactionSource = remember { MutableInteractionSource() }
+                        )
+                    }
+                }
+            }
+        }
+
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+        } else if (errorMessage != null) {
+            Text(text = "Ошибка: $errorMessage", color = MaterialTheme.colorScheme.error)
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 20.dp),
+                content = {
+                    items(movies) { movie ->
+                        MovieListItem(movie = movie, onClick = { onMovieClick(movie) })
+                    }
+
+                    item {
+                        if (isLoading) {
+                            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                        } else {
+                            LaunchedEffect(currentPage) {
+                                loadMoreMovies(
+                                    currentPage,
+                                    "${selectedSortOption.value}.${selectedOrderOption.value}"
+                                ) { newMovies ->
+                                    if (newMovies.isNotEmpty()) {
+                                        movies = movies + newMovies
+                                        currentPage++
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            )
         }
     }
 }
 
 @Composable
 fun MovieListItem(movie: Movie, onClick: () -> Unit) {
+    fun getBackgroundColorBasedOnRating(rating: Double): Color {
+        val red = Color(0xFFFF0000)
+        val green = Color(0xFF00FF00)
+        val fraction = (rating / 10).toFloat()
+        return Color(
+            red = ((1 - fraction) * red.red + fraction * green.red),
+            green = ((1 - fraction) * red.green + fraction * green.green),
+            blue = ((1 - fraction) * red.blue + fraction * green.blue),
+            alpha = 0.7f
+        )
+    }
+
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        onClick = onClick
+            .padding(8.dp)
+            .clickable(onClick = onClick)
+            .size(150.dp, 250.dp)
     ) {
-        Text(
-            text = movie.title,
-            modifier = Modifier.padding(16.dp)
-        )
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Image(
+                painter = rememberImagePainter("https://image.tmdb.org/t/p/w500${movie.posterPath}"),
+                contentDescription = movie.title,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+
+            Box(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .background(
+                        color = getBackgroundColorBasedOnRating(movie.voteAverage),
+                        shape = MaterialTheme.shapes.small
+                    )
+                    .border(1.dp, Color.White.copy(alpha = 0.7f), shape = MaterialTheme.shapes.small)
+                    .align(Alignment.TopStart)
+                    .padding(horizontal = 4.dp, vertical = 0.dp)
+            ) {
+                Text(
+                    text = "★ %.1f".format(movie.voteAverage),
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(4.dp)
+                )
+            }
+
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.4f),
+                                Color.Black.copy(alpha = 0.8f),
+                                Color.Black
+                            ),
+                            startY = 0f,
+                            endY = 700f
+                        )
+                    )
+            )
+
+            Text(
+                text = movie.title,
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(8.dp)
+            )
+        }
+    }
+}
+
+private fun fetchMovies(page: Int, sortOption: String, callback: (List<Movie>?, String?) -> Unit) {
+    val trustAllCerts = object : X509TrustManager {
+        @SuppressLint("TrustAllX509TrustManager")
+        override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+        @SuppressLint("TrustAllX509TrustManager")
+        override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+        override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+    }
+
+    val sslContext = SSLContext.getInstance("SSL").apply {
+        init(null, arrayOf<TrustManager>(trustAllCerts), java.security.SecureRandom())
+    }
+
+    val client = OkHttpClient.Builder()
+        .sslSocketFactory(sslContext.socketFactory, trustAllCerts)
+        .hostnameVerifier { _, _ -> true }
+        .build()
+
+    Thread {
+        val url = "https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=ru-RU&page=$page&sort_by=$sortOption"
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("accept", "application/json")
+            .addHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyMTU3ZDhkZWMwMDdkMmE2NTk0ODMxODk1NTI4ZTE0MCIsIm5iZiI6MTczMDA0MjU1My42NDk0MjEsInN1YiI6IjY3MWNjMjhlMjdiZDU3ZDkxZjYyYzM2YSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.eINlcwN5wuiMORzser26fsUOvfE3RpL-8bMnxhexSxs")
+            .build()
+
+        Log.d("MovieList", "Fetching movies from URL: $url")
+
+        try {
+            val response: Response = client.newCall(request).execute()
+
+            Log.d("MovieList", "Response Code: ${response.code}")
+
+            if (response.isSuccessful) {
+                val responseData = response.body?.string() ?: return@Thread callback(null, "Пустой ответ")
+                Log.d("MovieList", "Response Data: $responseData")
+
+                val jsonObject = Gson().fromJson(responseData, JsonObject::class.java)
+                val jsonArray: JsonArray = jsonObject.getAsJsonArray("results")
+
+                val movieList = mutableListOf<Movie>()
+                for (movie in jsonArray) {
+                    val movieObj = movie.asJsonObject
+
+                    val title = if (movieObj.has("title") && movieObj.get("title") != JsonNull.INSTANCE) {
+                        movieObj.get("title").asString
+                    } else {
+                        "Неизвестно"
+                    }
+
+                    val overview = if (movieObj.has("overview") && movieObj.get("overview") != JsonNull.INSTANCE) {
+                        movieObj.get("overview").asString
+                    } else {
+                        "Нет описания"
+                    }
+
+                    val releaseDate = if (movieObj.has("release_date") && movieObj.get("release_date") != JsonNull.INSTANCE) {
+                        movieObj.get("release_date").asString
+                    } else {
+                        ""
+                    }
+
+                    val year = if (releaseDate.length >= 4) {
+                        releaseDate.substring(0, 4).toIntOrNull() ?: 0
+                    } else {
+                        0
+                    }
+
+                    val voteAverage = if (movieObj.has("vote_average") && movieObj.get("vote_average") != JsonNull.INSTANCE) {
+                        movieObj.get("vote_average").asDouble
+                    } else {
+                        0.0
+                    }
+
+                    val posterPath = if (movieObj.has("poster_path") && movieObj.get("poster_path") != JsonNull.INSTANCE) {
+                        movieObj.get("poster_path").asString
+                    } else {
+                        ""
+                    }
+
+                    movieList.add(
+                        Movie(
+                            id = movieObj.get("id").asInt,
+                            title = title,
+                            year = year,
+                            director = "",
+                            actors = emptyList(),
+                            description = overview,
+                            posterPath = posterPath,
+                            voteAverage = voteAverage
+                        )
+                    )
+                }
+
+                callback(movieList, null)
+            } else {
+                Log.e("MovieList", "Error: ${response.code} - ${response.message}")
+                callback(null, "Ошибка: ${response.code}")
+            }
+        } catch (e: Exception) {
+            Log.e("MovieList", "Error: ${e.message}")
+            callback(null, "Ошибка: ${e.message}")
+        }
+    }.start()
+}
+
+
+private fun loadMoreMovies(currentPage: Int, sortOption: String, callback: (List<Movie>) -> Unit) {
+    fetchMovies(currentPage + 1, sortOption) { newMovies, _ ->
+        if (newMovies != null && newMovies.isNotEmpty()) {
+            callback(newMovies)
+        } else {
+            callback(emptyList())
+        }
     }
 }

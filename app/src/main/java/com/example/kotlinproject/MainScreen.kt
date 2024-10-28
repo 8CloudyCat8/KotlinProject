@@ -27,7 +27,6 @@ fun MainScreen(modifier: Modifier = Modifier) {
     var selectedIndex by remember { mutableIntStateOf(0) }
     var selectedMovie by remember { mutableStateOf<Movie?>(null) }
 
-    // Обработка кнопки "Назад"
     BackHandler(enabled = selectedIndex == 3 && selectedMovie != null) {
         selectedMovie = null
         selectedIndex = 1
