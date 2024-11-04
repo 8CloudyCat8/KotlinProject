@@ -1,153 +1,151 @@
 package com.example.kotlinproject.pages
 
-import android.annotation.SuppressLint
-import android.util.Log
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import coil.compose.rememberImagePainter
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberAsyncImagePainter
 import com.example.kotlinproject.models.Movie
-import com.google.gson.Gson
-import com.google.gson.JsonArray
-import com.google.gson.JsonNull
-import com.google.gson.JsonObject
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import java.security.cert.X509Certificate
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
-
-data class SortOption(val value: String, val label: String)
+import com.example.kotlinproject.MovieViewModel
+import com.example.kotlinproject.MovieViewModelFactory
+import com.example.kotlinproject.models.UserPreferences
 
 @Composable
-fun MovieListPage(onMovieClick: (Movie) -> Unit) {
-    var movies by remember { mutableStateOf<List<Movie>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-    var currentPage by remember { mutableStateOf(1) }
+fun MovieListPage(onMovieClick: (Movie) -> Unit, userPreferences: UserPreferences) {
+    val viewModel: MovieViewModel = viewModel(factory = MovieViewModelFactory(userPreferences))
 
-    var selectedSortOption by remember { mutableStateOf(SortOption("popularity", "Популярность")) }
-    var selectedOrderOption by remember { mutableStateOf(SortOption("desc", "По убыванию")) }
+    val context = LocalContext.current
 
-    val sortOptions = listOf(
-        SortOption("popularity", "Популярность"),
-        SortOption("original_title", "Оригинальное название"),
-        SortOption("revenue", "Выручка"),
-        SortOption("title", "Название"),
-        SortOption("primary_release_date", "Дата релиза"),
-        SortOption("vote_average", "Средняя оценка"),
-        SortOption("vote_count", "Количество голосов")
-    )
+    val lazyGridState = viewModel.lazyGridState
 
-    val orderOptions = listOf(
-        SortOption("desc", "По убыванию"),
-        SortOption("asc", "По возрастанию")
-    )
-
-    LaunchedEffect(selectedSortOption.value, selectedOrderOption.value) {
-        isLoading = true
-        val sortOption = "${selectedSortOption.value}.${selectedOrderOption.value}"
-        fetchMovies(currentPage, sortOption) { result, error ->
-            if (result != null) {
-                movies = result
-            }
-            isLoading = false
-            errorMessage = error
+    LaunchedEffect(viewModel.selectedSortOption, viewModel.selectedOrderOption) {
+        if (viewModel.movies.isEmpty()) {
+            viewModel.initFetchMovies()
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) {
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Сортировать по:", modifier = Modifier.padding(end = 8.dp))
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF131313))
+            .padding(top = 16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Сортировать по:", modifier = Modifier.padding(end = 8.dp), color = Color.White)
             var expandedSort by remember { mutableStateOf(false) }
             Box {
-                Text(selectedSortOption.label, Modifier.clickable { expandedSort = !expandedSort })
+                val selectedSortLabel = viewModel.sortOptions.find { it.value == viewModel.selectedSortOption }?.label ?: viewModel.selectedSortOption
+                Text(
+                    text = selectedSortLabel,
+                    color = Color.White,
+                    modifier = Modifier.clickable { expandedSort = !expandedSort }
+                )
                 DropdownMenu(expanded = expandedSort, onDismissRequest = { expandedSort = false }) {
-                    sortOptions.forEach { option ->
+                    viewModel.sortOptions.forEach { option ->
                         DropdownMenuItem(
                             text = { Text(option.label) },
                             onClick = {
-                                selectedSortOption = option
+                                if (viewModel.selectedSortOption != option.value) {
+                                    viewModel.selectedSortOption = option.value
+                                    viewModel.initFetchMovies()
+                                }
                                 expandedSort = false
-                                currentPage = 1
-                                movies = emptyList()
-                            },
-                            modifier = Modifier,
-                            interactionSource = remember { MutableInteractionSource() }
+                            }
                         )
                     }
                 }
             }
         }
 
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Порядок:", modifier = Modifier.padding(end = 8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Порядок:", modifier = Modifier.padding(end = 8.dp), color = Color.White)
             var expandedOrder by remember { mutableStateOf(false) }
             Box {
-                Text(selectedOrderOption.label, Modifier.clickable { expandedOrder = !expandedOrder })
+                val selectedOrderLabel = viewModel.orderOptions.find { it.value == viewModel.selectedOrderOption }?.label ?: viewModel.selectedOrderOption
+                Text(
+                    text = selectedOrderLabel,
+                    color = Color.White,
+                    modifier = Modifier.clickable { expandedOrder = !expandedOrder }
+                )
                 DropdownMenu(expanded = expandedOrder, onDismissRequest = { expandedOrder = false }) {
-                    orderOptions.forEach { option ->
+                    viewModel.orderOptions.forEach { option ->
                         DropdownMenuItem(
                             text = { Text(option.label) },
                             onClick = {
-                                selectedOrderOption = option
+                                if (viewModel.selectedOrderOption != option.value) {
+                                    viewModel.selectedOrderOption = option.value
+                                    viewModel.initFetchMovies()
+                                }
                                 expandedOrder = false
-                                currentPage = 1
-                                movies = emptyList()
-                            },
-                            modifier = Modifier,
-                            interactionSource = remember { MutableInteractionSource() }
+                            }
                         )
                     }
                 }
             }
         }
 
-        if (isLoading) {
+        if (viewModel.isLoading) {
             CircularProgressIndicator(modifier = Modifier.padding(16.dp))
-        } else if (errorMessage != null) {
-            Text(text = "Ошибка: $errorMessage", color = MaterialTheme.colorScheme.error)
+        } else if (viewModel.errorMessage != null) {
+            Text(text = "Ошибка: ${viewModel.errorMessage}", color = MaterialTheme.colorScheme.error)
         } else {
             LazyVerticalGrid(
+                state = lazyGridState,
                 columns = GridCells.Fixed(2),
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(horizontal = 8.dp)
                     .padding(top = 20.dp),
                 content = {
-                    items(movies) { movie ->
-                        MovieListItem(movie = movie, onClick = { onMovieClick(movie) })
+                    items(viewModel.movies) { movie ->
+                        MovieListItem(
+                            movie = movie,
+                            onClick = { onMovieClick(movie) },
+                            onFavoriteClick = {
+                                if (viewModel.isFavorite(movie)) {
+                                    viewModel.removeFromFavorites(context, movie)
+                                } else {
+                                    viewModel.addToFavorites(context, movie)
+                                }
+                            }
+                        )
                     }
-
                     item {
-                        if (isLoading) {
+                        if (viewModel.isLoading) {
                             CircularProgressIndicator(modifier = Modifier.padding(16.dp))
                         } else {
-                            LaunchedEffect(currentPage) {
-                                loadMoreMovies(
-                                    currentPage,
-                                    "${selectedSortOption.value}.${selectedOrderOption.value}"
-                                ) { newMovies ->
-                                    if (newMovies.isNotEmpty()) {
-                                        movies = movies + newMovies
-                                        currentPage++
-                                    }
+                            LaunchedEffect(viewModel.currentPage) {
+                                viewModel.loadMoreMovies { newMovies ->
+                                    viewModel.movies += newMovies
                                 }
                             }
                         }
@@ -159,7 +157,7 @@ fun MovieListPage(onMovieClick: (Movie) -> Unit) {
 }
 
 @Composable
-fun MovieListItem(movie: Movie, onClick: () -> Unit) {
+fun MovieListItem(movie: Movie, onClick: () -> Unit, onFavoriteClick: () -> Unit) {
     fun getBackgroundColorBasedOnRating(rating: Double): Color {
         val red = Color(0xFFFF0000)
         val green = Color(0xFF00FF00)
@@ -172,184 +170,117 @@ fun MovieListItem(movie: Movie, onClick: () -> Unit) {
         )
     }
 
-    Card(
+    var isAnimating by remember { mutableStateOf(false) }
+    var animationCount by remember { mutableStateOf(0) }
+
+    val heartScale by animateFloatAsState(
+        targetValue = if (isAnimating) 1.5f else 1f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+    )
+    val heartAlpha by animateFloatAsState(
+        targetValue = if (isAnimating) 0.6f else 1f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+    )
+
+    Box(
         modifier = Modifier
             .padding(8.dp)
-            .clickable(onClick = onClick)
             .size(150.dp, 250.dp)
     ) {
-        Box(
-            modifier = Modifier.fillMaxSize()
+        Card(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(onClick = onClick),
+            shape = MaterialTheme.shapes.medium
         ) {
-            Image(
-                painter = rememberImagePainter("https://image.tmdb.org/t/p/w500${movie.posterPath}"),
-                contentDescription = movie.title,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = ContentScale.Crop
-            )
-
             Box(
-                modifier = Modifier
-                    .padding(8.dp)
-                    .background(
-                        color = getBackgroundColorBasedOnRating(movie.voteAverage),
-                        shape = MaterialTheme.shapes.small
-                    )
-                    .border(1.dp, Color.White.copy(alpha = 0.7f), shape = MaterialTheme.shapes.small)
-                    .align(Alignment.TopStart)
-                    .padding(horizontal = 4.dp, vertical = 0.dp)
+                modifier = Modifier.fillMaxSize()
             ) {
-                Text(
-                    text = "★ %.1f".format(movie.voteAverage),
-                    color = Color.White,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(4.dp)
+                Image(
+                    painter = rememberAsyncImagePainter("https://image.tmdb.org/t/p/w500${movie.posterPath}"),
+                    contentDescription = movie.title,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
                 )
-            }
 
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.4f),
-                                Color.Black.copy(alpha = 0.8f),
-                                Color.Black
-                            ),
-                            startY = 0f,
-                            endY = 700f
+                Box(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .background(
+                            color = getBackgroundColorBasedOnRating(movie.voteAverage),
+                            shape = MaterialTheme.shapes.small
                         )
-                    )
-            )
-
-            Text(
-                text = movie.title,
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(8.dp)
-            )
-        }
-    }
-}
-
-private fun fetchMovies(page: Int, sortOption: String, callback: (List<Movie>?, String?) -> Unit) {
-    val trustAllCerts = object : X509TrustManager {
-        @SuppressLint("TrustAllX509TrustManager")
-        override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
-        @SuppressLint("TrustAllX509TrustManager")
-        override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
-        override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-    }
-
-    val sslContext = SSLContext.getInstance("SSL").apply {
-        init(null, arrayOf<TrustManager>(trustAllCerts), java.security.SecureRandom())
-    }
-
-    val client = OkHttpClient.Builder()
-        .sslSocketFactory(sslContext.socketFactory, trustAllCerts)
-        .hostnameVerifier { _, _ -> true }
-        .build()
-
-    Thread {
-        val url = "https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=ru-RU&page=$page&sort_by=$sortOption"
-        val request = Request.Builder()
-            .url(url)
-            .addHeader("accept", "application/json")
-            .addHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyMTU3ZDhkZWMwMDdkMmE2NTk0ODMxODk1NTI4ZTE0MCIsIm5iZiI6MTczMDA0MjU1My42NDk0MjEsInN1YiI6IjY3MWNjMjhlMjdiZDU3ZDkxZjYyYzM2YSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.eINlcwN5wuiMORzser26fsUOvfE3RpL-8bMnxhexSxs")
-            .build()
-
-        Log.d("MovieList", "Fetching movies from URL: $url")
-
-        try {
-            val response: Response = client.newCall(request).execute()
-
-            Log.d("MovieList", "Response Code: ${response.code}")
-
-            if (response.isSuccessful) {
-                val responseData = response.body?.string() ?: return@Thread callback(null, "Пустой ответ")
-                Log.d("MovieList", "Response Data: $responseData")
-
-                val jsonObject = Gson().fromJson(responseData, JsonObject::class.java)
-                val jsonArray: JsonArray = jsonObject.getAsJsonArray("results")
-
-                val movieList = mutableListOf<Movie>()
-                for (movie in jsonArray) {
-                    val movieObj = movie.asJsonObject
-
-                    val title = if (movieObj.has("title") && movieObj.get("title") != JsonNull.INSTANCE) {
-                        movieObj.get("title").asString
-                    } else {
-                        "Неизвестно"
-                    }
-
-                    val overview = if (movieObj.has("overview") && movieObj.get("overview") != JsonNull.INSTANCE) {
-                        movieObj.get("overview").asString
-                    } else {
-                        "Нет описания"
-                    }
-
-                    val releaseDate = if (movieObj.has("release_date") && movieObj.get("release_date") != JsonNull.INSTANCE) {
-                        movieObj.get("release_date").asString
-                    } else {
-                        ""
-                    }
-
-                    val year = if (releaseDate.length >= 4) {
-                        releaseDate.substring(0, 4).toIntOrNull() ?: 0
-                    } else {
-                        0
-                    }
-
-                    val voteAverage = if (movieObj.has("vote_average") && movieObj.get("vote_average") != JsonNull.INSTANCE) {
-                        movieObj.get("vote_average").asDouble
-                    } else {
-                        0.0
-                    }
-
-                    val posterPath = if (movieObj.has("poster_path") && movieObj.get("poster_path") != JsonNull.INSTANCE) {
-                        movieObj.get("poster_path").asString
-                    } else {
-                        ""
-                    }
-
-                    movieList.add(
-                        Movie(
-                            id = movieObj.get("id").asInt,
-                            title = title,
-                            year = year,
-                            director = "",
-                            actors = emptyList(),
-                            description = overview,
-                            posterPath = posterPath,
-                            voteAverage = voteAverage
+                        .border(
+                            1.dp,
+                            Color.White.copy(alpha = 0.7f),
+                            shape = MaterialTheme.shapes.small
                         )
+                        .align(Alignment.TopStart)
+                        .padding(horizontal = 4.dp, vertical = 0.dp)
+                ) {
+                    Text(
+                        text = "★ %.1f".format(movie.voteAverage),
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(4.dp)
                     )
                 }
 
-                callback(movieList, null)
-            } else {
-                Log.e("MovieList", "Error: ${response.code} - ${response.message}")
-                callback(null, "Ошибка: ${response.code}")
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.Black.copy(alpha = 0.4f),
+                                    Color.Black.copy(alpha = 0.8f),
+                                    Color.Black
+                                ),
+                                startY = 0f,
+                                endY = 700f
+                            )
+                        )
+                )
+
+                Text(
+                    text = movie.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(8.dp)
+                )
+
+                IconButton(
+                    onClick = {
+                        isAnimating = true
+                        animationCount += 1
+                        onFavoriteClick()
+                    },
+                    modifier = Modifier.align(Alignment.TopEnd)
+                ) {
+                    Icon(
+                        imageVector = if (movie.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = if (movie.isFavorite) "Удалить из избранного" else "Добавить в избранное",
+                        tint = if (movie.isFavorite) Color(0xFFF7B2CA) else Color.White,
+                        modifier = Modifier.scale(heartScale).alpha(heartAlpha)
+                    )
+                }
+
+                LaunchedEffect(animationCount) {
+                    if (isAnimating) {
+                        repeat(2) {
+                            kotlinx.coroutines.delay(200)
+                            isAnimating = false
+                            kotlinx.coroutines.delay(200)
+                            isAnimating = true
+                        }
+                        isAnimating = false
+                    }
+                }
             }
-        } catch (e: Exception) {
-            Log.e("MovieList", "Error: ${e.message}")
-            callback(null, "Ошибка: ${e.message}")
-        }
-    }.start()
-}
-
-
-private fun loadMoreMovies(currentPage: Int, sortOption: String, callback: (List<Movie>) -> Unit) {
-    fetchMovies(currentPage + 1, sortOption) { newMovies, _ ->
-        if (newMovies != null && newMovies.isNotEmpty()) {
-            callback(newMovies)
-        } else {
-            callback(emptyList())
         }
     }
 }
