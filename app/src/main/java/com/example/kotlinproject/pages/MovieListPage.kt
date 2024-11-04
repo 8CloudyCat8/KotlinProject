@@ -1,155 +1,286 @@
 package com.example.kotlinproject.pages
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberAsyncImagePainter
 import com.example.kotlinproject.models.Movie
+import com.example.kotlinproject.MovieViewModel
+import com.example.kotlinproject.MovieViewModelFactory
+import com.example.kotlinproject.models.UserPreferences
 
 @Composable
-fun MovieListPage(onMovieClick: (Movie) -> Unit) {
-    val movies = listOf(
-        Movie(
-            id = 1,
-            title = "Побег из Шоушенка",
-            year = 1994,
-            director = "Фрэнк Дарабонт",
-            actors = listOf("Тим Роббинс", "Морган Фриман", "Боб Гантон"),
-            description = """
-                В этой экранизации повести Стивена Кинга рассказывается о жизни Энди Дюфрейна, осужденного за убийство своей жены и её любовника. Проведя много лет в тюрьме Шоушенк, он подружился с сокамерником Редом, который помогает ему в адаптации. С помощью своих умений он находит способы выживания и сохраняет надежду на свободу.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 2,
-            title = "Крестный отец",
-            year = 1972,
-            director = "Фрэнсис Форд Коппола",
-            actors = listOf("Марлон Брандо", "Аль Пачино", "Джеймс Каан"),
-            description = """
-                Это история семьи Корлеоне, итало-американской мафиозной династии, управляющей криминальным миром Нью-Йорка. Когда главу семьи, дона Вито Корлеоне, пытаются убить, его сын Майкл, который изначально не хотел участвовать в делах семьи, вынужден взять на себя руководство.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 3,
-            title = "Начало",
-            year = 2010,
-            director = "Кристофер Нолан",
-            actors = listOf("Леонардо ДиКаприо", "Джозеф Гордон-Левитт", "Эллиот Пейдж"),
-            description = """
-                Специалист по воровству идей, Доменик Кобб, получает задание внедрить идею в подсознание человека. Вместе со своей командой он погружается в мир снов, где границы реальности стираются. Фильм полон захватывающих поворотов и визуально впечатляющих сцен.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 4,
-            title = "Темный рыцарь",
-            year = 2008,
-            director = "Кристофер Нолан",
-            actors = listOf("Кристиан Бейл", "Хит Леджер", "Аарон Экхарт"),
-            description = """
-                В Готэме появляется новый злодей — Джокер, который угрожает разрушить город. Бэтмен, комиссар Гордон и прокурор Харви Дент объединяются, чтобы остановить его, но Джокер всегда на шаг впереди, создавая хаос.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 5,
-            title = "Бойцовский клуб",
-            year = 1999,
-            director = "Дэвид Финчер",
-            actors = listOf("Эдвард Нортон", "Брэд Питт", "Хелена Бонэм Картер"),
-            description = """
-                Обычный офисный работник, страдающий от бессонницы, находит выход в создании подпольного бойцовского клуба. Под влиянием харизматичного Тайлер Дёрдена он начинает переосмыслять свою жизнь и общество, в котором живет.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 6,
-            title = "Форрест Гамп",
-            year = 1994,
-            director = "Роберт Земекис",
-            actors = listOf("Том Хэнкс", " robin Wright", "Гэри Синиз"),
-            description = """
-                Форрест Гамп — простой человек с низким IQ, но с большим сердцем. Его жизнь полна удивительных приключений: он становится свидетелем и участником значимых исторических событий, показывая, как простота и доброта могут изменить мир.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 7,
-            title = "Криминальное чтиво",
-            year = 1994,
-            director = "Квентин Тарантино",
-            actors = listOf("Джон Траволта", "Ума Турман", "Сэмюэл Л. Джексон"),
-            description = """
-                Этот фильм состоит из переплетенных историй, в которых главные герои сталкиваются с последствиями своих решений. Фильм выделяется своим уникальным стилем, диалогами и напряженными сценами, ставшими культовыми.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 8,
-            title = "Матрица",
-            year = 1999,
-            director = "Лана и Лилли Вачовски",
-            actors = listOf("Киану Ривз", "Лоренс Фишборн", "Кэрри-Энн Мосс"),
-            description = """
-                Нео, компьютерный хакер, обнаруживает, что мир, в котором он живет, — это всего лишь симуляция. Он присоединяется к группе повстанцев, чтобы сражаться с машинами, контролирующими человечество, и узнать правду о своем существовании.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 9,
-            title = "Властелин колец: Братство кольца",
-            year = 2001,
-            director = "Питер Джексон",
-            actors = listOf("Элайджа Вуд", "Иэн Маккеллен", "Лив Тайлер"),
-            description = """
-                Это первая часть эпической трилогии по книге Дж. Р. Р. Толкина о борьбе за Средиземье. Хоббит Фродо Бэггинс и его друзья отправляются в опасное путешествие, чтобы уничтожить могущественное кольцо, которое может привести к разрушению всего мира.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 10,
-            title = "Гладиатор",
-            year = 2000,
-            director = "Ридли Скотт",
-            actors = listOf("Рассел Кроу", "Хоакин Феникс", "Ричард Харрис"),
-            description = """
-                Генерал Максимус, преданный Римской империи, становится гладиатором после предательства. Он должен сразиться за свою жизнь и отомстить тому, кто убил его семью и украл его честь.
-            """.trimIndent()
-        ),
-        Movie(
-            id = 11,
-            title = "Властелин колец: Две крепости",
-            year = 2002,
-            director = "Питер Джексон",
-            actors = listOf("Элайджа Вуд", "Иэн Маккеллен", "Лив Тайлер"),
-            description = """
-                Братство распалось, но Кольцо Всевластья должно быть уничтожено. Фродо и Сэм вынуждены доверить свои жизни Голлуму, который взялся провести их к вратам Мордора. Громадная Армия Сарумана приближается: члены братства и их союзники готовы принять бой. Битва за Средиземье продолжается.
-            """.trimIndent()
-        ),
-    )
+fun MovieListPage(onMovieClick: (Movie) -> Unit, userPreferences: UserPreferences) {
+    val viewModel: MovieViewModel = viewModel(factory = MovieViewModelFactory(userPreferences))
+
+    val context = LocalContext.current
+
+    val lazyGridState = viewModel.lazyGridState
+
+    LaunchedEffect(viewModel.selectedSortOption, viewModel.selectedOrderOption) {
+        if (viewModel.movies.isEmpty()) {
+            viewModel.initFetchMovies()
+        }
+    }
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFF131313))
+            .padding(top = 16.dp)
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 100.dp, top = 20.dp)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            items(movies) { movie ->
-                MovieListItem(movie = movie, onClick = { onMovieClick(movie) })
+            Text("Сортировать по:", modifier = Modifier.padding(end = 8.dp), color = Color.White)
+            var expandedSort by remember { mutableStateOf(false) }
+            Box {
+                val selectedSortLabel = viewModel.sortOptions.find { it.value == viewModel.selectedSortOption }?.label ?: viewModel.selectedSortOption
+                Text(
+                    text = selectedSortLabel,
+                    color = Color.White,
+                    modifier = Modifier.clickable { expandedSort = !expandedSort }
+                )
+                DropdownMenu(expanded = expandedSort, onDismissRequest = { expandedSort = false }) {
+                    viewModel.sortOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option.label) },
+                            onClick = {
+                                if (viewModel.selectedSortOption != option.value) {
+                                    viewModel.selectedSortOption = option.value
+                                    viewModel.initFetchMovies()
+                                }
+                                expandedSort = false
+                            }
+                        )
+                    }
+                }
             }
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("Порядок:", modifier = Modifier.padding(end = 8.dp), color = Color.White)
+            var expandedOrder by remember { mutableStateOf(false) }
+            Box {
+                val selectedOrderLabel = viewModel.orderOptions.find { it.value == viewModel.selectedOrderOption }?.label ?: viewModel.selectedOrderOption
+                Text(
+                    text = selectedOrderLabel,
+                    color = Color.White,
+                    modifier = Modifier.clickable { expandedOrder = !expandedOrder }
+                )
+                DropdownMenu(expanded = expandedOrder, onDismissRequest = { expandedOrder = false }) {
+                    viewModel.orderOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option.label) },
+                            onClick = {
+                                if (viewModel.selectedOrderOption != option.value) {
+                                    viewModel.selectedOrderOption = option.value
+                                    viewModel.initFetchMovies()
+                                }
+                                expandedOrder = false
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
+        if (viewModel.isLoading) {
+            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+        } else if (viewModel.errorMessage != null) {
+            Text(text = "Ошибка: ${viewModel.errorMessage}", color = MaterialTheme.colorScheme.error)
+        } else {
+            LazyVerticalGrid(
+                state = lazyGridState,
+                columns = GridCells.Fixed(2),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp)
+                    .padding(top = 20.dp),
+                content = {
+                    items(viewModel.movies) { movie ->
+                        MovieListItem(
+                            movie = movie,
+                            onClick = { onMovieClick(movie) },
+                            onFavoriteClick = {
+                                if (viewModel.isFavorite(movie)) {
+                                    viewModel.removeFromFavorites(context, movie)
+                                } else {
+                                    viewModel.addToFavorites(context, movie)
+                                }
+                            }
+                        )
+                    }
+                    item {
+                        if (viewModel.isLoading) {
+                            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+                        } else {
+                            LaunchedEffect(viewModel.currentPage) {
+                                viewModel.loadMoreMovies { newMovies ->
+                                    viewModel.movies += newMovies
+                                }
+                            }
+                        }
+                    }
+                }
+            )
         }
     }
 }
 
 @Composable
-fun MovieListItem(movie: Movie, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        onClick = onClick
-    ) {
-        Text(
-            text = movie.title,
-            modifier = Modifier.padding(16.dp)
+fun MovieListItem(movie: Movie, onClick: () -> Unit, onFavoriteClick: () -> Unit) {
+    fun getBackgroundColorBasedOnRating(rating: Double): Color {
+        val red = Color(0xFFFF0000)
+        val green = Color(0xFF00FF00)
+        val fraction = (rating / 10).toFloat()
+        return Color(
+            red = ((1 - fraction) * red.red + fraction * green.red),
+            green = ((1 - fraction) * red.green + fraction * green.green),
+            blue = ((1 - fraction) * red.blue + fraction * green.blue),
+            alpha = 0.7f
         )
+    }
+
+    var isAnimating by remember { mutableStateOf(false) }
+    var animationCount by remember { mutableStateOf(0) }
+
+    val heartScale by animateFloatAsState(
+        targetValue = if (isAnimating) 1.5f else 1f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+    )
+    val heartAlpha by animateFloatAsState(
+        targetValue = if (isAnimating) 0.6f else 1f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing)
+    )
+
+    Box(
+        modifier = Modifier
+            .padding(8.dp)
+            .size(150.dp, 250.dp)
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(onClick = onClick),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Image(
+                    painter = rememberAsyncImagePainter("https://image.tmdb.org/t/p/w500${movie.posterPath}"),
+                    contentDescription = movie.title,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+
+                Box(
+                    modifier = Modifier
+                        .padding(8.dp)
+                        .background(
+                            color = getBackgroundColorBasedOnRating(movie.voteAverage),
+                            shape = MaterialTheme.shapes.small
+                        )
+                        .border(
+                            1.dp,
+                            Color.White.copy(alpha = 0.7f),
+                            shape = MaterialTheme.shapes.small
+                        )
+                        .align(Alignment.TopStart)
+                        .padding(horizontal = 4.dp, vertical = 0.dp)
+                ) {
+                    Text(
+                        text = "★ %.1f".format(movie.voteAverage),
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(4.dp)
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Transparent,
+                                    Color.Black.copy(alpha = 0.4f),
+                                    Color.Black.copy(alpha = 0.8f),
+                                    Color.Black
+                                ),
+                                startY = 0f,
+                                endY = 700f
+                            )
+                        )
+                )
+
+                Text(
+                    text = movie.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(8.dp)
+                )
+
+                IconButton(
+                    onClick = {
+                        isAnimating = true
+                        animationCount += 1
+                        onFavoriteClick()
+                    },
+                    modifier = Modifier.align(Alignment.TopEnd)
+                ) {
+                    Icon(
+                        imageVector = if (movie.isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = if (movie.isFavorite) "Удалить из избранного" else "Добавить в избранное",
+                        tint = if (movie.isFavorite) Color(0xFFF7B2CA) else Color.White,
+                        modifier = Modifier.scale(heartScale).alpha(heartAlpha)
+                    )
+                }
+
+                LaunchedEffect(animationCount) {
+                    if (isAnimating) {
+                        repeat(2) {
+                            kotlinx.coroutines.delay(200)
+                            isAnimating = false
+                            kotlinx.coroutines.delay(200)
+                            isAnimating = true
+                        }
+                        isAnimating = false
+                    }
+                }
+            }
+        }
     }
 }

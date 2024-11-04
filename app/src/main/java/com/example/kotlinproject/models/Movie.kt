@@ -6,5 +6,8 @@ data class Movie(
     val year: Int,
     val director: String,
     val actors: List<String>,
-    val description: String
+    val description: String,
+    val posterPath: String,
+    val voteAverage: Double,
+    var isFavorite: Boolean = false
 )
